@@ -24,7 +24,7 @@ If applicable, add screenshots to help explain your problem.
 **Environment:**
 - Home Assistant version:
 - Browser:
-- HACS version:
+- Marketplace version:
 - Card version:
 - Card (solar-roof-card or solar-roof-mini-card):
 - Panel integration (Enphase, OpenDTU, Hoymiles, APsystems, Huawei, SolarEdge, Fox ESS…) and number of panels:
