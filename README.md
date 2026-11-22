@@ -14,7 +14,7 @@
   <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/enphase-envoy.png" alt="Enphase Envoy" height="24">&nbsp;&nbsp;
   <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/hoymiles-wifi.png" alt="Hoymiles" height="24">&nbsp;&nbsp;
   <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/apsystems-ecu-reader.png" alt="APsystems ECU Reader" height="24">&nbsp;&nbsp;
-  <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/huawei-solar.png" alt="Huawei Solar" height="36">&nbsp;&nbsp;
+  <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/huawei-solar.png" alt="Huawei Solar" height="24">&nbsp;&nbsp;
   <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/solaredgeoptimizers.png" alt="SolarEdge Optimizers" height="24">&nbsp;&nbsp;
   <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/foxess-modbus.png" alt="Fox ESS Modbus" height="24">
 </p>
@@ -35,11 +35,11 @@ A Lovelace card for **your solar panels, panel by panel**: each micro-inverter, 
 ## Features
 
 - **A heat grid per string**: one cell per panel with its label and power, coloured by its share of the strongest panel (deeper orange: more), each string with its total
-- **The panels to check**: a panel making less than `threshold` % (50 by default) of the median of its string is **low** (grey, ringed in red), one that reports nothing is **silent** (red); an alert says which, at what share of its neighbours and since when (*P7 at 14 % of its neighbours since 1:00 PM (shade?) · P11 silent since 11:42 AM*)
+- **The panels to check**: a panel making less than `threshold` % (50 by default) of the median of its string is **low** (pale red, ringed in red), one that reports nothing is **silent** (red); an alert says which, at what share of its neighbours and since when (*P7 at 14% of its neighbours since 1:00 PM (shade?) · P11 silent since 11:42 AM*)
 - **Three tiles**: the power now (with the peak power, `peak_power`), today's energy (`energy`, else the number of panels) and the panels to check
 - **Any number of panels**: the cells wrap; no layout to draw
-- **By night** nothing is flagged: micro-inverters that go to sleep are not silent panels
-- **Illustrated header**: a house whose roof carries ten panels, the panels to check greyed in proportion; while the panels produce, the sun's rays turn and a glint sweeps over them; the moon by night, the dark theme darkens the picture
+- **By night** nothing is flagged: micro-inverters that go to sleep are not silent panels; nor at sunrise and sunset, while the sun is under 10°
+- **Illustrated header**: a house whose roof carries ten panels, the panels to check in red, in proportion; while the panels produce, the sun's rays turn and a glint sweeps over them; the moon by night, the dark theme darkens the picture
 - **Mini card**: the share of panels in line as a ring around the badge, the state, the power now and one small cell per panel; its zoom button opens the full card in place
 - **Tap a cell** (or a tile) to open its sensor's history
 - Visual editor for both cards, light and dark themes, 22 languages, no external dependency
@@ -54,7 +54,7 @@ The card finds the power sensor of each micro-inverter, optimiser or string thes
 |  | [OpenDTU / AhoyDTU](https://github.com/tbnobody/OpenDTU) (MQTT) | Hoymiles micro-inverters through MQTT discovery, power of each inverter and input |
 | <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/hoymiles-wifi.png" alt="Hoymiles" height="16"> | [Hoymiles](https://github.com/suaveolent/ha-hoymiles-wifi) (Marketplace) | Hoymiles HMS micro-inverters through their DTU, power of each input |
 | <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/apsystems-ecu-reader.png" alt="APsystems ECU Reader" height="16"> | [APsystems ECU Reader](https://github.com/HAEdwin/homeassistant-apsystems_ecu_reader) (Marketplace) | Power of each inverter channel |
-| <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/huawei-solar.png" alt="Huawei Solar" height="24"> | [Huawei Solar](https://github.com/wlcrs/huawei_solar) (Marketplace) | Huawei SUN2000 optimisers |
+| <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/huawei-solar.png" alt="Huawei Solar" height="16"> | [Huawei Solar](https://github.com/wlcrs/huawei_solar) (Marketplace) | Huawei SUN2000 optimisers |
 | <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/solaredgeoptimizers.png" alt="SolarEdge Optimizers" height="16"> | [SolarEdge Optimizers](https://github.com/ProudElm/solaredgeoptimizers) (Marketplace) | Power of each SolarEdge optimiser |
 | <img src="https://raw.githubusercontent.com/juju35/ha-solar-roof-card/main/images/foxess-modbus.png" alt="Fox ESS Modbus" height="16"> | [Fox ESS Modbus](https://github.com/nathanmarlor/foxess_modbus) (Marketplace) | Power of each PV string |
 
@@ -162,9 +162,10 @@ type: custom:solar-roof-mini-card
 
 ## How it works
 
-- **Panels**: `panels`, else the power sensors of a panel integration, by their entity id or translation key: Enphase Envoy's micro-inverters (`sensor.inverter_<serial>`), OpenDTU / AhoyDTU's DC inputs over MQTT (`…_ch1_power`, `…_ch1_p_dc`; not the inverter's `ch0` total), Hoymiles' ports, APsystems' channels, Huawei Solar's optimisers, SolarEdge Optimizers, Fox ESS's PV strings; totals, grid, load and battery sensors are left out. They are labelled P1, P2… in their entity ids' natural order (their names in the tooltips) and grouped by device
+- **Panels**: `panels`, else the power sensors of a panel integration, by their entity id or translation key: Enphase Envoy's micro-inverters (`sensor.inverter_<serial>`), OpenDTU / AhoyDTU's DC inputs over MQTT (`…_ch1_power`, `…_ch1_p_dc` on a Hoymiles or TSUN device, by its manufacturer or model; not the inverter's `ch0` total), Hoymiles' ports, APsystems' channels, Huawei Solar's optimisers, SolarEdge Optimizers, Fox ESS's PV strings; totals, grid, load and battery sensors are left out. They are labelled P1, P2… in their entity ids' natural order (their names in the tooltips) and grouped by device
 - **Low**: under `threshold` % of its string's median (of every panel's when its string has fewer than three), once that median is over 30 W; **silent**: unavailable or unknown; *since*: the sensor's last change
-- **Night**: while `sun.sun` is below the horizon (without it, when no panel makes 5 W): nothing is flagged
+- **Night**: while `sun.sun` is below the horizon (without it, when no panel makes 5 W): nothing is flagged; nor while its `elevation` is under 10°
+- **Refresh**: live, at each state change of the panels' sensors; nothing is fetched
 - **Read only**: the card calls no action
 
 ## Development
