@@ -10,7 +10,7 @@ const SR_LOOP = 3;
 
 // ── Banner ───────────────────────────────────────────────────────────────────
 // The illustrated header's scene: 200 × 80, drawn to the banner's right edge. Hills and a house whose roof carries ten
-// panels; the panels to check are grey (as many tenths as there are panels to check, at least one). While the panels
+// panels; the panels to check are red (as many tenths as there are panels to check, at least one). While the panels
 // produce, the sun's rays turn and a glint sweeps over them. The picture's night (`night`: the dark theme) darkens the
 // sky, the hills and the house; the real night (`moon`: the sun set) puts the moon in place of the sun.
 const srScene = ({ night, moon, bad, producing, animate, uid }) => {
@@ -18,7 +18,7 @@ const srScene = ({ night, moon, bad, producing, animate, uid }) => {
   const wall = night ? "#3a4656" : "#f3e3c8";
   const roof = night ? "#5b3b30" : "#c8643a";
   const cell = night ? "#14243f" : "#24489c";
-  const grey = night ? "#4a525e" : "#7d8794";
+  const check = night ? "#7a3338" : "#e0777d";
   const pos = [
     [96, 36],
     [109, 36],
@@ -33,8 +33,8 @@ const srScene = ({ night, moon, bad, producing, animate, uid }) => {
   ];
   // The panels to check: from the middle of the lower row, so that one alone shows at a glance.
   const order = [7, 6, 8, 2, 5, 9, 1, 3, 0, 4];
-  const greyed = new Set(order.slice(0, bad));
-  const panels = pos.map(([x, y], i) => `<rect x="${x}" y="${y}" width="12" height="8" fill="${greyed.has(i) ? grey : cell}" stroke="${night ? "#2c4a78" : "#8fb0ff"}" stroke-width=".5"/>`).join("");
+  const flagged = new Set(order.slice(0, bad));
+  const panels = pos.map(([x, y], i) => `<rect x="${x}" y="${y}" width="12" height="8" fill="${flagged.has(i) ? check : cell}" stroke="${night ? "#2c4a78" : "#8fb0ff"}" stroke-width=".5"/>`).join("");
   const sweep = animate && producing ? `<animateTransform attributeName="transform" type="translate" from="-30 0" to="110 0" dur="${SR_LOOP}s" repeatCount="indefinite"/>` : "";
   const glint = producing ? `<g clip-path="url(#rf${uid})"><rect x="90" y="30" width="10" height="26" fill="#fff" opacity=".35" transform="skewX(-20)">${sweep}</rect></g>` : "";
   const sun = "#f5b400";
@@ -227,7 +227,7 @@ class SolarRoofCard extends RcCard {
     }
   }
 
-  // One cell per panel: its label and power, coloured by its share of the strongest panel; low: grey ringed in red,
+  // One cell per panel: its label and power, coloured by its share of the strongest panel; low: pale red ringed in red,
   // silent: red.
   _cell(p) {
     const title = [p.name, p.w != null ? this._watts(p.w) : this._t("silent"), p.state === "low" ? this._t("low") : ""].filter(Boolean).join(" · ");
@@ -298,8 +298,8 @@ class SolarRoofCard extends RcCard {
 
   static styles = `
     :host { --sr-l0: rgba(127,127,127,.18); --sr-l1: #ffe3a3; --sr-l2: #ffc94d; --sr-l3: #ffa94d; --sr-l4: #f08c00;
-            --sr-low: #d0d5dc; --sr-silent: #e5484d; --sr-ink: #3d2a00; }
-    ha-card.dk { --sr-l1: #4a3d1f; --sr-l2: #7a5a1c; --sr-l3: #b07818; --sr-l4: #e08a18; --sr-low: #3a3f46; --sr-silent: #b3261e; --sr-ink: #fff6e6; }
+            --sr-low: #f6cfcf; --sr-silent: #e5484d; --sr-ink: #3d2a00; }
+    ha-card.dk { --sr-l1: #4a3d1f; --sr-l2: #7a5a1c; --sr-l3: #b07818; --sr-l4: #e08a18; --sr-low: #522a2e; --sr-silent: #b3261e; --sr-ink: #fff6e6; }
     ha-card.lvl-ok { --c: #1c7ed6; }
     ha-card.lvl-alert { --c: #e8590c; }
     ha-card.lvl-night, ha-card.lvl-none { --c: var(--rc-idle); }
