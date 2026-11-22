@@ -458,7 +458,8 @@ class SolarRoofMiniCard extends rcMini(
 
   _drawMini(m) {
     const night = this._night();
-    if (!this._changed(["mini", m.state, m.total, m.cells.map((p) => [p.level, p.state]), night, this._dark()])) return;
+    // Rebuilt only when what it shows changes: the power as written, not every watt.
+    if (!this._changed(["mini", m.state, this._watts(m.total), m.cells.map((p) => [p.level, p.state]), night, this._dark()])) return;
     const status = this._status(m);
     // The chip is plain text: it opens nothing.
     const chips = `<span class="r"><span>${rcEsc(m.none ? this._t("no_panels") : this._watts(m.total))}</span></span>`;
