@@ -403,6 +403,9 @@ class SolarRoofCard extends RcCard {
     .banner .rs { display: flex; flex-wrap: wrap; gap: 4px; height: 20px; margin: 3px 0 0 -2px; min-width: 0; overflow: hidden; }
     .banner .r { flex: none; line-height: 20px; padding: 0 7px; color: var(--bt); background: rgba(255,255,255,.62); }
     .banner.night .r { background: rgba(10,20,40,.4); }
+    .banner span.r { cursor: default; }
+    .banner span.r:hover { background: rgba(255,255,255,.62); }
+    .banner.night span.r:hover { background: rgba(10,20,40,.4); }
     .banner .ringb { position: absolute; inset: 0; }
     /* The mini card's strip: one small cell per panel, in its colour. */
     .banner .strip { display: flex; flex-wrap: wrap; gap: 2px; height: 10px; overflow: hidden; margin-top: 4px; }
@@ -457,7 +460,8 @@ class SolarRoofMiniCard extends rcMini(
     const night = this._night();
     if (!this._changed(["mini", m.state, m.total, m.cells.map((p) => [p.level, p.state]), night, this._dark()])) return;
     const status = this._status(m);
-    const chips = m.none ? `<button class="r"><span>${rcEsc(this._t("no_panels"))}</span></button>` : `<button class="r"><span>${rcEsc(this._watts(m.total))}</span></button>`;
+    // The chip is plain text: it opens nothing.
+    const chips = `<span class="r"><span>${rcEsc(m.none ? this._t("no_panels") : this._watts(m.total))}</span></span>`;
     const strip = m.none ? "" : `<div class="strip" aria-hidden="true">${m.cells.map((p) => `<i class="l${p.level} ${p.state}"></i>`).join("")}</div>`;
     // The ring around the badge: the share of panels in line.
     const pct = m.count ? ((m.count - m.issues.length) / m.count) * 100 : 0;

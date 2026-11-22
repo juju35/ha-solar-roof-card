@@ -132,7 +132,7 @@ test("mini card: the ring, the power chip and one strip cell per panel; the zoom
   const html = card.shadowRoot.innerHTML;
   assert.match(html, /<ha-card class="lvl-alert bn">/);
   assert.match(html, /class="ringb"/);
-  assert.match(html, /<button class="r"><span>2\.96 kW<\/span><\/button>/);
+  assert.match(html, /<span class="r"><span>2\.96 kW<\/span><\/span>/);
   assert.equal((html.match(/<i class="l/g) || []).length, 12);
   card._zoomed = true;
   card._sig = null;
