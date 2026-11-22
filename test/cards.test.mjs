@@ -93,7 +93,7 @@ test("full card: the banner, the grid by string, the alert and the tiles", () =>
   assert.equal((html.match(/class="pc /g) || []).length, 12);
   assert.match(html, /class="pc l1 low" data-id="sensor\.hm_b_ch1_power"/);
   assert.match(html, /class="pc l0 silent" data-id="sensor\.hm_b_ch5_power"/);
-  assert.match(html, /role="alert"><svg[\s\S]*<b>P7<\/b> at 14 % of its neighbours since [^<]+ \(shade\?\) · <b>P11<\/b> silent since /);
+  assert.match(html, /role="alert"><svg[\s\S]*<b>P7<\/b> at 14% of its neighbours since [^<]+ \(shade\?\) · <b>P11<\/b> silent since /);
   assert.match(html, /<span class="xv">14\.2 kWh<\/span>/);
   assert.match(html, /<span class="xs">of 3\.84 kWp<\/span>/);
   assert.match(html, /<button class="xt bad"><span class="xl">Check<\/span><span class="xv">P7, P11<\/span><span class="xs">low · no data<\/span>/);

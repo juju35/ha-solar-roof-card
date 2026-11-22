@@ -122,6 +122,15 @@ class SolarRoofCard extends RcCard {
     }
   }
 
+  // A share (0–1) as a percentage, the way the language writes it.
+  _pct(v) {
+    try {
+      return srIntl(Intl.NumberFormat, this._lang(), { style: "percent", maximumFractionDigits: 0 }).format(v);
+    } catch {
+      return `${Math.round(v * 100)} %`;
+    }
+  }
+
   _watts(v) {
     if (v == null) return "—";
     return v >= 1000 ? `${this._fmt(v / 1000, 2)} kW` : `${this._fmt(v, 0)} W`;
@@ -241,7 +250,7 @@ class SolarRoofCard extends RcCard {
     const msg = m.issues
       .map((p) =>
         p.state === "low"
-          ? `${this._t("low_msg", { p: `<b>${rcEsc(p.label)}</b>`, n: this._fmt((p.ratio || 0) * 100, 0), t: p.since ? this._hm(p.since) : "—" })} (${rcEsc(this._t("shade"))})`
+          ? `${this._t("low_msg", { p: `<b>${rcEsc(p.label)}</b>`, n: this._pct(p.ratio || 0), t: p.since ? this._hm(p.since) : "—" })} (${rcEsc(this._t("shade"))})`
           : this._t("silent_msg", { p: `<b>${rcEsc(p.label)}</b>`, t: p.since ? this._hm(p.since) : "—" }),
       )
       .join(" · ");
