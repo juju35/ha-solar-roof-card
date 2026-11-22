@@ -109,7 +109,7 @@ export const load = ({ now } = {}) => {
   const code = [read("shared"), ...cards.map((c) => `{\n${read(c)}}\n`)].join("\n");
   return vm.runInContext(
     `${code}
-    ({ RcCard, RC_I18N, SR_I18N, rcLang, srPanels, srAssess, customElements, window,
+    ({ RcCard, RC_I18N, SR_I18N, rcLang, srPanels, srAssess, srWatts, customElements, window,
        cards: Object.fromEntries(${JSON.stringify([...cards, "solar-roof-mini-card"])}.map((t) => [t, customElements.get(t)])) })`,
     ctx,
   );

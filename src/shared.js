@@ -464,7 +464,7 @@ const srWatts = (st) => {
   const v = Number(st.state);
   if (!Number.isFinite(v)) return null;
   const u = st.attributes?.unit_of_measurement || "W";
-  return /^kW$/i.test(u) ? v * 1000 : v;
+  return /^kW$/i.test(u) ? v * 1000 : /^MW$/i.test(u) ? v * 1e6 : v;
 };
 
 // Entity ids in their natural order: inverter_2 before inverter_10.

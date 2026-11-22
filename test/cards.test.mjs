@@ -56,6 +56,14 @@ test("discovery: an MQTT sensor is a panel only on a Hoymiles or TSUN micro-inve
   assert.equal(sr.srPanels(h).length, 12, "a Hoymiles model alone is enough");
 });
 
+test("power: W, kW and MW", () => {
+  const w = (state, unit) => sr.srWatts({ state, attributes: { unit_of_measurement: unit } });
+  assert.equal(w("310", "W"), 310);
+  assert.equal(w("1.2", "kW"), 1200);
+  assert.equal(w("0.004", "MW"), 4000);
+  assert.equal(w("unavailable", "W"), null);
+});
+
 test("assessment: nothing is flagged while the sun is low", () => {
   const h = makeHass();
   h.states["sun.sun"].attributes = { elevation: 6.5 };
