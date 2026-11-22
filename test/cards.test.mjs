@@ -56,6 +56,14 @@ test("discovery: an MQTT sensor is a panel only on a Hoymiles or TSUN micro-inve
   assert.equal(sr.srPanels(h).length, 12, "a Hoymiles model alone is enough");
 });
 
+test("assessment: nothing is flagged while the sun is low", () => {
+  const h = makeHass();
+  h.states["sun.sun"].attributes = { elevation: 6.5 };
+  assert.equal(sr.srAssess(h, sr.srPanels(h)).issues.length, 0, "at sunrise the panels wake up one by one");
+  h.states["sun.sun"].attributes = { elevation: 24 };
+  assert.equal(sr.srAssess(h, sr.srPanels(h)).issues.length, 2);
+});
+
 test("assessment: a panel far below its string's median is low, an unavailable one silent; nothing by night", () => {
   const h = makeHass();
   const a = sr.srAssess(h, sr.srPanels(h), 50);

@@ -437,7 +437,8 @@ const RC_I18N = {
 // YAML (each with an optional name and string); otherwise they are found by their integration and their name, and
 // grouped by device (an inverter, a micro-inverter's DTU). A panel is low when it makes less than `threshold` % of
 // the median of its string (of all the panels when its string has fewer than three), silent when it reports nothing.
-// By night (the sun below the horizon, or every panel at almost nothing) nothing is flagged: micro-inverters sleep.
+// By night (the sun below the horizon, or every panel at almost nothing) nothing is flagged: micro-inverters sleep;
+// nor while the sun is lower than SR_MIN_ELEVATION.
 const SR_PANELS = [
   ["enphase_envoy", /^sensor\.inverter_\d+$/],
   ["mqtt", /_ch[1-9]\d*_(power|p_dc)$/],
@@ -454,6 +455,9 @@ const SR_NOT = /total|_ch0_|ac_power|grid|load|battery|export|import/;
 const SR_MQTT_DTU = /hoymiles|tsun|opendtu|ahoy/i;
 const SR_MQTT_MODEL = /^(hm|hms|hmt|tsol)[-_ ]?\d/i;
 const srMqttPanel = (dev) => !!dev && (SR_MQTT_DTU.test(dev.manufacturer || "") || SR_MQTT_MODEL.test(dev.model || ""));
+// Under this elevation of the sun (°) nothing is flagged: at sunrise and sunset the panels wake up one by one and the
+// shade of the neighbours runs long.
+const SR_MIN_ELEVATION = 10;
 
 const srWatts = (st) => {
   if (!st || ["unavailable", "unknown", ""].includes(st.state)) return null;
@@ -506,6 +510,8 @@ const srAssess = (hass, panels, threshold = 50) => {
   const all = srMedian(live);
   const sun = hass.states["sun.sun"];
   const night = sun ? sun.state === "below_horizon" : !live.length || Math.max(...live) < 5;
+  const elevation = Number(sun?.attributes?.elevation);
+  const lowSun = !night && Number.isFinite(elevation) && elevation < SR_MIN_ELEVATION;
   const groups = new Map();
   for (const c of cells) {
     if (!groups.has(c.string)) groups.set(c.string, []);
@@ -516,7 +522,7 @@ const srAssess = (hass, panels, threshold = 50) => {
     const med = vals.length >= 3 ? srMedian(vals) : all;
     for (const c of group) {
       c.ratio = med > 0 && c.w != null ? c.w / med : null;
-      c.state = night ? "ok" : c.w == null ? "silent" : med > 30 && c.w < (med * threshold) / 100 ? "low" : "ok";
+      c.state = night || lowSun ? "ok" : c.w == null ? "silent" : med > 30 && c.w < (med * threshold) / 100 ? "low" : "ok";
     }
   }
   const max = Math.max(0, ...live);
