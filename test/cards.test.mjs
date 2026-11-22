@@ -44,6 +44,18 @@ test("discovery: the DC inputs of each inverter in natural order, grouped by dev
   ]);
 });
 
+test("discovery: an MQTT sensor is a panel only on a Hoymiles or TSUN micro-inverter's device", () => {
+  const h = makeHass();
+  h.entities["sensor.shelly_pro_4pm_ch1_power"] = { device_id: "shelly", platform: "mqtt" };
+  h.states["sensor.shelly_pro_4pm_ch1_power"] = { entity_id: "sensor.shelly_pro_4pm_ch1_power", state: "40", attributes: {} };
+  h.devices.shelly = { name: "Shelly Pro 4PM", manufacturer: "Shelly", model: "SPSW-104PE16EU" };
+  const ids = sr.srPanels(h).map((p) => p.id);
+  assert.ok(!ids.includes("sensor.shelly_pro_4pm_ch1_power"), "a relay's channel is not a panel");
+  assert.equal(ids.length, 12);
+  h.devices.hm_b = { name: "String B", model: "HMS-2000-4T" };
+  assert.equal(sr.srPanels(h).length, 12, "a Hoymiles model alone is enough");
+});
+
 test("assessment: a panel far below its string's median is low, an unavailable one silent; nothing by night", () => {
   const h = makeHass();
   const a = sr.srAssess(h, sr.srPanels(h), 50);

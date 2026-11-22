@@ -31,8 +31,8 @@ export const setup = (s) => {
       states[id] = st(id, String(p), W, i === 6 ? "2026-06-21T11:00:00Z" : "2026-06-21T09:42:00Z");
       entities[id] = { entity_id: id, device_id: inv, platform: "mqtt" };
     });
-    devices.hm_a = { name: "String A" };
-    devices.hm_b = { name: "String B" };
+    devices.hm_a = { name: "String A", manufacturer: "Hoymiles", model: "HM-1500" };
+    devices.hm_b = { name: "String B", manufacturer: "Hoymiles", model: "HM-1500" };
   }
   states["sensor.solar_energy_today"] = st("sensor.solar_energy_today", s.scene === "night" ? "21.6" : "14.2", { unit_of_measurement: "kWh", device_class: "energy" });
   return {

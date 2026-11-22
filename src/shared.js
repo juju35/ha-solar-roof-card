@@ -449,6 +449,11 @@ const SR_PANELS = [
   ["foxess_modbus", /pv\d+_power$/],
 ];
 const SR_NOT = /total|_ch0_|ac_power|grid|load|battery|export|import/;
+// An MQTT sensor is a panel only on a Hoymiles / TSUN micro-inverter's device (OpenDTU, AhoyDTU): many other MQTT
+// devices name their channels ch1, ch2…
+const SR_MQTT_DTU = /hoymiles|tsun|opendtu|ahoy/i;
+const SR_MQTT_MODEL = /^(hm|hms|hmt|tsol)[-_ ]?\d/i;
+const srMqttPanel = (dev) => !!dev && (SR_MQTT_DTU.test(dev.manufacturer || "") || SR_MQTT_MODEL.test(dev.model || ""));
 
 const srWatts = (st) => {
   if (!st || ["unavailable", "unknown", ""].includes(st.state)) return null;
@@ -474,6 +479,7 @@ const srPanels = (hass, list) => {
     .filter((id) => {
       if (!id.startsWith("sensor.") || SR_NOT.test(id)) return false;
       const e = reg[id];
+      if (e.platform === "mqtt" && !srMqttPanel(hass.devices?.[e.device_id])) return false;
       return SR_PANELS.some(([platform, re]) => e.platform === platform && (re.test(id) || re.test(e.translation_key || "")));
     })
     .sort(srOrder);

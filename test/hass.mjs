@@ -30,7 +30,7 @@ export const makeHass = ({ sun = "above_horizon", powers = POWERS, enphase = fal
     language: "en",
     locale: { language: "en" },
     themes: { darkMode: false },
-    devices: { hm_a: { name: "String A" }, hm_b: { name: "String B" }, env1: { name: "Inverter 122101" } },
+    devices: { hm_a: { name: "String A", manufacturer: "Hoymiles", model: "HM-1500" }, hm_b: { name: "String B", manufacturer: "Hoymiles", model: "HM-1500" }, env1: { name: "Inverter 122101" } },
     entities,
     states,
     calls: [],
