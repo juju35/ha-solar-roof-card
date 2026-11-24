@@ -1,6 +1,6 @@
 {
   "name": "ha-solar-roof-card",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A Lovelace card for Home Assistant solar panels, panel by panel: each micro-inverter, optimiser or string coloured by its production, a shaded or failing panel flagged.",
   "repository": {
     "type": "git",
