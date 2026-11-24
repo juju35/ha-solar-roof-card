@@ -44,6 +44,42 @@ test("discovery: the DC inputs of each inverter in natural order, grouped by dev
   ]);
 });
 
+test("discovery: a micro-inverter that is a device of its own is grouped under its gateway, else with its peers (#6)", () => {
+  // Envoy known: the micro-inverters' devices point to it.
+  const h = makeHass({ enphase: true });
+  h.devices = { ...h.devices, envoy: { name: "Envoy 1234" } };
+  for (let i = 1; i <= 4; i++) h.devices[`env${i}`] = { name: `Inverter 12210${i}`, via_device_id: "envoy" };
+  const strings = [...new Set(sr.srPanels(h).filter((p) => p.id.startsWith("sensor.inverter_")).map((p) => p.string))];
+  assert.deepEqual(strings, ["Envoy 1234"], "one group, not one per micro-inverter");
+  // No gateway known: still one group for them all; the Hoymiles strings are left as they are.
+  const p = sr.srPanels(makeHass({ enphase: true }));
+  assert.deepEqual([...new Set(p.filter((x) => x.id.startsWith("sensor.inverter_")).map((x) => x.string))], [""]);
+  assert.equal(p.find((x) => x.id === "sensor.hm_a_ch1_power").string, "String A");
+});
+
+test("exclude: an unused string is left out of the panels found and of `panels` (#3)", () => {
+  const p = sr.srPanels(makeHass(), undefined, ["sensor.hm_b_ch6_power"]);
+  assert.equal(p.length, 11);
+  assert.ok(!p.some((x) => x.id === "sensor.hm_b_ch6_power"));
+  assert.equal(sr.srPanels(makeHass(), ["sensor.hm_a_ch1_power", "sensor.hm_a_ch2_power"], "sensor.hm_a_ch2_power").length, 1);
+});
+
+test("orientation: a panel is compared with the panels of its string facing the same way (#3)", () => {
+  // Six south panels at ~300 W and three east panels at ~90 W on one string, in the afternoon.
+  const powers = [300, 305, 298, 302, 296, 301, 92, 88, 90];
+  const h = makeHass({ powers });
+  const ids = powers.map((_, i) => `sensor.${i < 6 ? "hm_a" : "hm_b"}_ch${(i % 6) + 1}_power`);
+  const mixed = ids.map((entity) => ({ entity, string: "Roof" }));
+  assert.equal(sr.srAssess(h, sr.srPanels(h, mixed)).issues.length, 3, "without orientations the east panels look shaded");
+  const oriented = ids.map((entity, i) => ({ entity, string: "Roof", orientation: i < 6 ? "South" : "East" }));
+  const a = sr.srAssess(h, sr.srPanels(h, oriented));
+  assert.equal(a.issues.length, 0, "each compared with its own side");
+  assert.equal(a.strings.length, 1, "still shown as one string");
+  // A shaded east panel is still caught among the east ones.
+  const shaded = sr.srAssess(makeHass({ powers: [300, 305, 298, 302, 296, 301, 92, 20, 90] }), sr.srPanels(h, oriented));
+  assert.deepEqual(json(shaded.issues.map((c) => c.id)), ["sensor.hm_b_ch2_power"]);
+});
+
 test("discovery: an MQTT sensor is a panel only on a Hoymiles or TSUN micro-inverter's device", () => {
   const h = makeHass();
   h.entities["sensor.shelly_pro_4pm_ch1_power"] = { device_id: "shelly", platform: "mqtt" };

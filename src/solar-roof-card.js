@@ -148,7 +148,7 @@ class SolarRoofCard extends RcCard {
   _collect() {
     const h = this._hass;
     const c = this._config;
-    const panels = rcMemo((this._memo ||= {}), "panels", [c.panels, h.entities, h.devices], () => srPanels(h, c.panels));
+    const panels = rcMemo((this._memo ||= {}), "panels", [c.panels, c.exclude, h.entities, h.devices], () => srPanels(h, c.panels, c.exclude));
     const threshold = Math.min(95, Math.max(5, Number(c.threshold) || 50));
     const a = srAssess(h, panels, threshold);
     const state = !panels.length ? "none" : a.night ? "night" : a.issues.length ? "alert" : "ok";
@@ -230,7 +230,7 @@ class SolarRoofCard extends RcCard {
   // One cell per panel: its label and power, coloured by its share of the strongest panel; low: pale red ringed in red,
   // silent: red.
   _cell(p) {
-    const title = [p.name, p.w != null ? this._watts(p.w) : this._t("silent"), p.state === "low" ? this._t("low") : ""].filter(Boolean).join(" · ");
+    const title = [p.name, p.orientation, p.w != null ? this._watts(p.w) : this._t("silent"), p.state === "low" ? this._t("low") : ""].filter(Boolean).join(" · ");
     const value = p.w == null ? "—" : p.w >= 1000 ? `${this._fmt(p.w / 1000, 1)}<small> kW</small>` : `${this._fmt(p.w, 0)}<small> W</small>`;
     return `<button class="pc l${p.level} ${p.state}" data-id="${rcEsc(p.id)}" title="${rcEsc(title)}"><span class="pl">${rcEsc(p.label)}</span><span class="pv">${value}</span></button>`;
   }
