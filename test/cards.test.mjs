@@ -55,6 +55,12 @@ test("discovery: a micro-inverter that is a device of its own is grouped under i
   const p = sr.srPanels(makeHass({ enphase: true }));
   assert.deepEqual([...new Set(p.filter((x) => x.id.startsWith("sensor.inverter_")).map((x) => x.string))], [""]);
   assert.equal(p.find((x) => x.id === "sensor.hm_a_ch1_power").string, "String A");
+  // Inverters with several inputs behind a DTU (OpenDTU's via_device) keep their own groups.
+  const d = makeHass();
+  d.devices = { ...d.devices, dtu: { name: "OpenDTU" } };
+  d.devices.hm_a = { ...d.devices.hm_a, via_device_id: "dtu" };
+  d.devices.hm_b = { ...d.devices.hm_b, via_device_id: "dtu" };
+  assert.deepEqual([...new Set(sr.srPanels(d).map((x) => x.string))], ["String A", "String B"]);
 });
 
 test("exclude: an unused string is left out of the panels found and of `panels` (#3)", () => {

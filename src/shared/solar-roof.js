@@ -1,8 +1,8 @@
 // ── Solar roof ───────────────────────────────────────────────────────────────
 // A panel is a power sensor: a micro-inverter (Enphase, Hoymiles through OpenDTU, AhoyDTU or its Wi-Fi DTU), an input
 // of an inverter (APsystems channels, Fox ESS strings) or an optimiser (Huawei, SolarEdge). `panels` lists them in
-// YAML (each with an optional name, string and orientation); otherwise they are found by their integration and their name, and
-// grouped by device (an inverter, a micro-inverter's DTU or gateway). A panel is low when it makes less than
+// YAML (each with an optional name, string and orientation); otherwise they are found by their integration and their
+// name, and grouped by device (an inverter, a micro-inverter's DTU or gateway). A panel is low when it makes less than
 // `threshold` % of the median of the panels of its string facing the same way (of all the panels facing that way, else
 // of all the panels, when they are fewer than three), silent when it reports nothing.
 // By night (the sun below the horizon, or every panel at almost nothing) nothing is flagged: micro-inverters sleep;
@@ -64,10 +64,14 @@ export const srPanels = (hass, list, exclude) => {
     })
     .sort(srOrder);
   const devName = (dev) => dev?.name_by_user || dev?.name || "";
-  // Grouped by device; a micro-inverter that is a device of its own (Enphase) goes under its gateway (the Envoy).
+  // Grouped by device. A device with a single panel (an Enphase micro-inverter) goes under its gateway (the Envoy);
+  // a device with several inputs (a Hoymiles inverter behind OpenDTU, an APsystems one behind its ECU) stays a group.
+  const perDevice = new Map();
+  for (const id of ids) perDevice.set(reg[id].device_id, (perDevice.get(reg[id].device_id) || 0) + 1);
   const panels = ids.map((id, i) => {
     const dev = hass.devices?.[reg[id].device_id];
-    const via = dev?.via_device_id ? hass.devices?.[dev.via_device_id] : undefined;
+    const alone = perDevice.get(reg[id].device_id) === 1;
+    const via = alone && dev?.via_device_id ? hass.devices?.[dev.via_device_id] : undefined;
     return { id, label: `P${i + 1}`, name: hass.states[id]?.attributes.friendly_name || id, string: devName(via) || devName(dev), orientation: "" };
   });
   // An integration whose every panel is alone in its group or has none (a device per micro-inverter, no gateway known):
