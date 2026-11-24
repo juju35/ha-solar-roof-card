@@ -109,20 +109,36 @@ panels:
     name: Garage
     string: Garage
 
+# One string, panels facing two ways: each compared with those facing the same way
+type: custom:solar-roof-card
+panels:
+  - entity: sensor.pv_panel_1_power
+    string: Roof
+    orientation: South
+  - entity: sensor.pv_panel_2_power
+    string: Roof
+    orientation: East
+
+# The panels found, but an unused inverter input
+type: custom:solar-roof-card
+exclude:
+  - sensor.foxess_pv2_power
+
 # Two lines on a phone dashboard
 type: custom:solar-roof-mini-card
 ```
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `panels` | list | found automatically | Advanced (YAML only): the panels' power sensors, each an entity id or `{ entity, name, string }`; the cells follow its order |
+| `panels` | list | found automatically | Advanced (YAML only): the panels' power sensors, each an entity id or `{ entity, name, string, orientation }`; the cells follow its order. `orientation` (any text: `South`, `East`…): a panel is compared only with the panels of its string facing the same way |
+| `exclude` | list | | Advanced (YAML only): power sensors to leave out (an unused string or inverter input, say), whether found or listed under `panels` |
 | `title` | string | `Solar roof` | Card title |
 | `show_title` | boolean | `true` | Both: show the title |
 | `show_subtitle` | boolean | `true` | Both: the power now and the number of panels under the title |
 | `navigation_path` | string | | Both: a tap on the header opens this dashboard path |
 | `peak_power` | number | | The installation's peak power (Wp), shown under the power now |
 | `energy` | string | | A daily energy sensor of the installation (kWh), in the second tile (else the number of panels) |
-| `threshold` | number | `50` | A panel below this share (%) of its string's median is low |
+| `threshold` | number | `50` | A panel below this share (%) of the median of its string (of the panels of its string facing the same way, with `orientation`) is low |
 | `show_alerts` | boolean | `true` | The alert under the grid (and the night note) |
 | `show_tiles` | boolean | `true` | The three tiles |
 | `illustration` | boolean | `true` | Both: the illustrated header (`false`: the classic header) |
@@ -162,8 +178,8 @@ type: custom:solar-roof-mini-card
 
 ## How it works
 
-- **Panels**: `panels`, else the power sensors of a panel integration, by their entity id or translation key: Enphase Envoy's micro-inverters (`sensor.inverter_<serial>`), OpenDTU / AhoyDTU's DC inputs over MQTT (`…_ch1_power`, `…_ch1_p_dc` on a Hoymiles or TSUN device, by its manufacturer or model; not the inverter's `ch0` total), Hoymiles' ports, APsystems' channels, Huawei Solar's optimisers, SolarEdge Optimizers, Fox ESS's PV strings; totals, grid, load and battery sensors are left out. They are labelled P1, P2… in their entity ids' natural order (their names in the tooltips) and grouped by device
-- **Low**: under `threshold` % of its string's median (of every panel's when its string has fewer than three), once that median is over 30 W; **silent**: unavailable or unknown; *since*: the sensor's last change
+- **Panels**: `panels`, else the power sensors of a panel integration, by their entity id or translation key: Enphase Envoy's micro-inverters (`sensor.inverter_<serial>`), OpenDTU / AhoyDTU's DC inputs over MQTT (`…_ch1_power`, `…_ch1_p_dc` on a Hoymiles or TSUN device, by its manufacturer or model; not the inverter's `ch0` total), Hoymiles' ports, APsystems' channels, Huawei Solar's optimisers, SolarEdge Optimizers, Fox ESS's PV strings; totals, grid, load and battery sensors are left out. They are labelled P1, P2… in their entity ids' natural order (their names in the tooltips) and grouped by device — the micro-inverters that are devices of their own (Enphase) under their gateway (the Envoy), else all in one group
+- **Low**: under `threshold` % of the median of its string's panels facing the same way (`orientation`; fewer than three: of every panel facing that way, else of every panel), once that median is over 30 W; **silent**: unavailable or unknown; *since*: the sensor's last change
 - **Night**: while `sun.sun` is below the horizon (without it, when no panel makes 5 W): nothing is flagged; nor while its `elevation` is under 10°
 - **Refresh**: live, at each state change of the panels' sensors; nothing is fetched
 - **Read only**: the card calls no action

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 - 2026-11-24
+
+### Features
+- `orientation` for the panels listed under `panels` (#3): a panel is compared only with the panels of its string facing the same way (fewer than three: with every panel facing that way), so east panels in the afternoon are no longer flagged next to south ones. Shown in the cell's tooltip; the grid stays grouped by string.
+- `exclude` (YAML): power sensors to leave out — an unused string or inverter input (Fox ESS PV2, say) — whether found or listed under `panels` (#3).
+
+### Fixes
+- Micro-inverters that are devices of their own (Enphase) are no longer one group per panel, a column of single cells (#6): they are grouped under their gateway (the Envoy), else all together, the cells wrapping into a compact grid.
+
 ## 1.0.3 - 2026-11-24
 
 ### Maintenance

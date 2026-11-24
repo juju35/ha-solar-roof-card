@@ -1,9 +1,10 @@
 // ── Solar roof ───────────────────────────────────────────────────────────────
 // A panel is a power sensor: a micro-inverter (Enphase, Hoymiles through OpenDTU, AhoyDTU or its Wi-Fi DTU), an input
 // of an inverter (APsystems channels, Fox ESS strings) or an optimiser (Huawei, SolarEdge). `panels` lists them in
-// YAML (each with an optional name and string); otherwise they are found by their integration and their name, and
-// grouped by device (an inverter, a micro-inverter's DTU). A panel is low when it makes less than `threshold` % of
-// the median of its string (of all the panels when its string has fewer than three), silent when it reports nothing.
+// YAML (each with an optional name, string and orientation); otherwise they are found by their integration and their
+// name, and grouped by device (an inverter, a micro-inverter's DTU or gateway). A panel is low when it makes less than
+// `threshold` % of the median of the panels of its string facing the same way (of all the panels facing that way, else
+// of all the panels, when they are fewer than three), silent when it reports nothing.
 // By night (the sun below the horizon, or every panel at almost nothing) nothing is flagged: micro-inverters sleep;
 // nor while the sun is lower than SR_MIN_ELEVATION.
 export const SR_PANELS = [
@@ -37,27 +38,55 @@ export const srWatts = (st) => {
 // Entity ids in their natural order: inverter_2 before inverter_10.
 export const srOrder = (a, b) => a.localeCompare(b, "en", { numeric: true });
 
-// The panels: `panels` (a list of entity ids, or of { entity, name, string }), else every power sensor of a panel
-// integration. Each gets a short label (P1, P2…: its name stays in the tooltip) and its string.
-export const srPanels = (hass, list) => {
+// The panels: `panels` (a list of entity ids, or of { entity, name, string, orientation }), else every power sensor of a
+// panel integration but those in `exclude` (an unused string, say). Each gets a short label (P1, P2…: its name stays in
+// the tooltip), its string and its orientation (the panels are compared with those facing the same way).
+export const srPanels = (hass, list, exclude) => {
+  const skip = new Set((Array.isArray(exclude) ? exclude : exclude ? [exclude] : []).map(String));
   if (Array.isArray(list) && list.length)
     return list
       .map((p) => (typeof p === "string" ? { entity: p } : p))
-      .filter((p) => p?.entity)
-      .map((p, i) => ({ id: p.entity, label: p.name || `P${i + 1}`, name: p.name || hass.states[p.entity]?.attributes.friendly_name || p.entity, string: p.string ?? "" }));
+      .filter((p) => p?.entity && !skip.has(p.entity))
+      .map((p, i) => ({
+        id: p.entity,
+        label: p.name || `P${i + 1}`,
+        name: p.name || hass.states[p.entity]?.attributes.friendly_name || p.entity,
+        string: p.string ?? "",
+        orientation: p.orientation == null ? "" : String(p.orientation),
+      }));
   const reg = hass.entities || {};
   const ids = Object.keys(reg)
     .filter((id) => {
-      if (!id.startsWith("sensor.") || SR_NOT.test(id)) return false;
+      if (!id.startsWith("sensor.") || SR_NOT.test(id) || skip.has(id)) return false;
       const e = reg[id];
       if (e.platform === "mqtt" && !srMqttPanel(hass.devices?.[e.device_id])) return false;
       return SR_PANELS.some(([platform, re]) => e.platform === platform && (re.test(id) || re.test(e.translation_key || "")));
     })
     .sort(srOrder);
-  return ids.map((id, i) => {
+  const devName = (dev) => dev?.name_by_user || dev?.name || "";
+  // Grouped by device. A device with a single panel (an Enphase micro-inverter) goes under its gateway (the Envoy);
+  // a device with several inputs (a Hoymiles inverter behind OpenDTU, an APsystems one behind its ECU) stays a group.
+  const perDevice = new Map();
+  for (const id of ids) perDevice.set(reg[id].device_id, (perDevice.get(reg[id].device_id) || 0) + 1);
+  const panels = ids.map((id, i) => {
     const dev = hass.devices?.[reg[id].device_id];
-    return { id, label: `P${i + 1}`, name: hass.states[id]?.attributes.friendly_name || id, string: dev?.name_by_user || dev?.name || "" };
+    const alone = perDevice.get(reg[id].device_id) === 1;
+    const via = alone && dev?.via_device_id ? hass.devices?.[dev.via_device_id] : undefined;
+    return { id, label: `P${i + 1}`, name: hass.states[id]?.attributes.friendly_name || id, string: devName(via) || devName(dev), orientation: "" };
   });
+  // An integration whose every panel is alone in its group or has none (a device per micro-inverter, no gateway known):
+  // one group for them all, the cells wrapping, rather than a group per panel.
+  const count = new Map();
+  for (const p of panels) count.set(p.string, (count.get(p.string) || 0) + 1);
+  const platforms = new Map();
+  for (const p of panels) {
+    const platform = reg[p.id].platform;
+    if (!platforms.has(platform)) platforms.set(platform, []);
+    platforms.get(platform).push(p);
+  }
+  for (const group of platforms.values())
+    if (group.length > 1 && group.every((p) => !p.string || count.get(p.string) === 1)) for (const p of group) p.string = "";
+  return panels;
 };
 
 export const srMedian = (vals) => {
@@ -84,9 +113,22 @@ export const srAssess = (hass, panels, threshold = 50) => {
     if (!groups.has(c.string)) groups.set(c.string, []);
     groups.get(c.string).push(c);
   }
-  for (const group of groups.values()) {
+  // Compared within its string and its orientation (an east panel with the east panels of its string); a group of fewer
+  // than three with the panels facing the same way, else with them all.
+  const facing = new Map();
+  const peers = new Map();
+  for (const c of cells) {
+    const o = c.orientation || "";
+    const key = `${c.string}\u0000${o}`;
+    if (!peers.has(key)) peers.set(key, []);
+    peers.get(key).push(c);
+    if (!facing.has(o)) facing.set(o, []);
+    if (c.w != null) facing.get(o).push(c.w);
+  }
+  for (const group of peers.values()) {
     const vals = group.filter((c) => c.w != null).map((c) => c.w);
-    const med = vals.length >= 3 ? srMedian(vals) : all;
+    const same = facing.get(group[0].orientation || "");
+    const med = vals.length >= 3 ? srMedian(vals) : group[0].orientation && same.length >= 3 ? srMedian(same) : all;
     for (const c of group) {
       c.ratio = med > 0 && c.w != null ? c.w / med : null;
       c.state = night || lowSun ? "ok" : c.w == null ? "silent" : med > 30 && c.w < (med * threshold) / 100 ? "low" : "ok";
