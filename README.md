@@ -73,7 +73,7 @@ Or manually:
 3. Open **Solar Roof Card** and click **Install**
 4. Clear your browser cache and refresh
 
-The Marketplace registers the dashboard resource for you.
+The Marketplace registers the dashboard resource for you: `/local/community/ha-solar-roof-card/ha-solar-roof-card.js`.
 
 ### Manual
 
